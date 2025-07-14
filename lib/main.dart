@@ -1,10 +1,12 @@
 // lib/main.dart
 import 'dart:io';
 import 'dart:convert';
+import 'package:counter_flutter/widgets/counter_dialog.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:counter_flutter/models/counter.dart';
 import 'package:flutter/material.dart';
 import 'widgets/counter_card.dart';
+
 
 void main() {
   runApp(const MyApp());
@@ -73,9 +75,18 @@ class _MyHomePageState extends State<MyHomePage> {
     _loadCountersFromFile();
   }
 
-  void _addCounter(){
+  void _showCounterDialog() async {
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => const CounterDialog(),
+    );
+    if (name != null && name.trim().isNotEmpty) {
+      _addCounter(name);
+    }
+  }
+  void _addCounter(String name){
     setState(() {
-      _counters.add(Counter(id: _nextId, name: 'Counter ${_nextId + 1}'));
+      _counters.add(Counter(id: _nextId, name: name));
       _nextId++;
     });
     _saveCountersToFile();
@@ -135,7 +146,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () =>_addCounter(),
+        onPressed: () =>_showCounterDialog(),
         tooltip: 'Add New Counter',
         child: const Icon(Icons.add),
       ),
