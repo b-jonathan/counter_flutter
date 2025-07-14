@@ -1,11 +1,11 @@
 // lib/main.dart
 import 'dart:io';
 import 'dart:convert';
-import 'package:counter_flutter/widgets/counter_dialog.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:counter_flutter/models/counter.dart';
+import 'widgets/counter_dialog.dart';
+import 'models/counter.dart';
 import 'package:flutter/material.dart';
 import 'widgets/counter_card.dart';
+import 'services/counter.dart';
 
 
 void main() {
@@ -38,41 +38,39 @@ class MyHomePage extends StatefulWidget {
 
 
 class _MyHomePageState extends State<MyHomePage> {
+  final CounterService _service = CounterService();
   List<Counter> _counters = [];
-  int _nextId = 0;
+  bool _loading = true;
 
-  Future<File> _getLocalFile() async {
-    final dir = await getApplicationDocumentsDirectory();
-    return File('${dir.path}/counters.json');
-  }
 
-  Future<void> _saveCountersToFile() async {
-    final file = await _getLocalFile();
-    final data = _counters.map((c) => c.toJson()).toList();
-    await file.writeAsString(jsonEncode(data));
-  }
-
-  Future<void> _loadCountersFromFile() async {
-    try {
-      final file = await _getLocalFile();
-      final raw = await file.readAsString();
-      final jsonList = jsonDecode(raw) as List;
-      setState(() {
-        _counters = jsonList.map((e) => Counter.fromJson(e)).toList();
-        _nextId = _counters.isEmpty
-            ? 0
-            : _counters.map((c) => c.id).reduce((a, b) => a > b ? a : b) + 1;
-      });
-    } catch (e) {
-      _counters = [];
-      _nextId = 0;
-    }
-  }
 
   @override
   void initState() {
     super.initState();
-    _loadCountersFromFile();
+    _loadCounters();
+  }
+
+  Future<void> _loadCounters() async {
+    try {
+        final counters = await _service.getCounters();
+        setState(() {
+          _counters = counters;
+          _loading = false;
+        });
+    } catch (e) {
+
+      setState(() {
+        _counters = [];
+        _loading = false;
+      });
+    }
+  }
+
+  void _addCounter(String name) async {
+    final newCounter = await _service.createCounter(name);
+    setState(() {
+      _counters.add(newCounter);
+    });
   }
 
   void _showCounterDialog() async {
@@ -84,39 +82,38 @@ class _MyHomePageState extends State<MyHomePage> {
       _addCounter(name);
     }
   }
-  void _addCounter(String name){
-    setState(() {
-      _counters.add(Counter(id: _nextId, name: name));
-      _nextId++;
-    });
-    _saveCountersToFile();
-  }
 
-  void _deleteCounter(Counter counter){
-    setState(() {
-      _counters.remove(counter);
-    });
-    _saveCountersToFile();
-  }
 
-  Counter _getCounterById(int id) {
+
+
+  Counter _getCounterById(String id) {
     return _counters.firstWhere((c) => c.id == id);
   }
 
-  void _incrementCounter(int id) {
-    final counter = _getCounterById(id);
-    setState(()  {
-      counter.count++;
-    });
-    _saveCountersToFile();
-  }
 
-  void _decrementCounter(int id) {
+  void _incrementCounter(String id) async {
     final counter = _getCounterById(id);
     setState(() {
-      counter.count--;
+      counter.count++;
     });
-    _saveCountersToFile();
+    await _service.updateCounter(counter);
+  }
+
+  void _decrementCounter(String id) async {
+    final counter = _getCounterById(id);
+    if (counter.count > 0) {
+      setState(() {
+        counter.count--;
+      });
+      await _service.updateCounter(counter);
+    }
+  }
+
+  void _deleteCounter(Counter counter) async {
+    setState(() {
+      _counters.removeWhere((c) => c.id == counter.id);
+    });
+    await _service.deleteCounter(counter.id);
   }
 
   @override

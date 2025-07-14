@@ -1,5 +1,5 @@
 class Counter {
-  final int id;
+  final String id;
   final String name;
   int count;
 
