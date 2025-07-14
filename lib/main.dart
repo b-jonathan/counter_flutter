@@ -81,8 +81,11 @@ class _MyHomePageState extends State<MyHomePage> {
     _saveCountersToFile();
   }
 
-  void _removeCounter(int id){
-
+  void _deleteCounter(Counter counter){
+    setState(() {
+      _counters.remove(counter);
+    });
+    _saveCountersToFile();
   }
 
   Counter _getCounterById(int id) {
@@ -121,9 +124,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Center(
                   child: CounterCard(
-                    counter: counter.count,
+                    counter: counter,
                     onIncrement: () => _incrementCounter(counter.id),
                     onDecrement: () => _decrementCounter(counter.id),
+                    onDelete: () => _deleteCounter(counter),
                   ),
                 ),
               );
