@@ -99,6 +99,14 @@ class _MyHomePageState extends State<MyHomePage> {
     await _service.updateCounter(counter);
   }
 
+  void setCounter(String id, int count) async {
+    final counter = _getCounterById(id);
+    setState(() {
+      counter.count = count;
+    });
+    await _service.updateCounter(counter);
+  }
+
   void _decrementCounter(String id) async {
     final counter = _getCounterById(id);
     if (counter.count > 0) {
@@ -136,6 +144,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     onIncrement: () => _incrementCounter(counter.id),
                     onDecrement: () => _decrementCounter(counter.id),
                     onDelete: () => _deleteCounter(counter),
+                    onSetValue: (val) => setCounter(counter.id,val),
                   ),
                 ),
               );
